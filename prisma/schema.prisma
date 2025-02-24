@@ -1,0 +1,95 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider             = "prisma-client-py"
+  interface            = "asyncio"
+  recursive_type_depth = 5
+}
+
+model User {
+  id             String          @id @default(uuid())
+  user_id        String          @unique
+  email          String          @unique
+  name           String
+  profileImage   String
+  role           Role            @default(User)
+  createdAt      DateTime        @default(now())
+  wallpapers     Wallpaper[]     @relation("ArtistWallpapers")
+  favorites      Favorite[]
+  purchases      Purchase[]
+  artistEarnings ArtistEarnings?
+
+  instagram String?
+  twitter   String?
+}
+
+model Wallpaper {
+  id            String     @id @default(uuid())
+  title         String     @db.VarChar(14)
+  categoryId    String
+  artistId      String
+  category      Category   @relation(fields: [categoryId], references: [id])
+  artist        User       @relation("ArtistWallpapers", fields: [artistId], references: [id])
+  imageUrl      String
+  price         Float?
+  isFree        Boolean    @default(true)
+  copyrightYear Int
+  hdQuality     Boolean
+  resolution    Json
+  createdAt     DateTime   @default(now())
+  favorites     Favorite[]
+  purchase      Purchase[]
+}
+
+model Category {
+  id         String       @id @default(uuid())
+  name       CategoryName @unique
+  wallpapers Wallpaper[]
+}
+
+model Favorite {
+  userId      String
+  wallpaperId String
+  user        User      @relation(fields: [userId], references: [id])
+  wallpaper   Wallpaper @relation(fields: [wallpaperId], references: [id])
+  createdAt   DateTime  @default(now())
+
+  @@id([userId, wallpaperId])
+}
+
+model Purchase {
+  id           String    @id @default(uuid())
+  userId       String
+  wallpaperId  String
+  user         User      @relation(fields: [userId], references: [id])
+  wallpaper    Wallpaper @relation(fields: [wallpaperId], references: [id])
+  purchaseDate DateTime  @default(now())
+  amount       Float
+}
+
+model ArtistEarnings {
+  userId        String  @id
+  user          User    @relation(fields: [userId], references: [id])
+  totalEarnings Float @default(0)
+}
+
+enum ProductType {
+  WALLPAPER
+  WALLPAPER_PACK
+}
+
+enum Role {
+  User
+  Artist
+}
+
+enum CategoryName {
+  THREE_D      @map("3D")
+  ABSTRACT
+  PATTERN
+  PHOTOGRAPHY
+  ILLUSTRATION
+}

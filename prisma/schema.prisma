@@ -11,11 +11,11 @@ generator client {
 
 model User {
   id             String          @id @default(uuid())
-  user_id        String          @unique
+  user_id        String?          @unique
   email          String          @unique
-  name           String
+  name           String?
   password       String
-  profileImage   String
+  profileImage   String?
   role           Role            @default(User)
   createdAt      DateTime        @default(now())
   wallpapers     Wallpaper[]     @relation("ArtistWallpapers")

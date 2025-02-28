@@ -14,7 +14,7 @@ async def signup(data: Signup):
     password = data.password
 
     try:
-        existing_user = await prisma.user.find_first(where={"email": email})
+        existing_user = await prisma.user.find_unique(where={"email": email})
     except Exception:
         logger.error("DB Error while checking existing user", exc_info=True)
         raise HTTPException(
@@ -45,7 +45,7 @@ async def signin(data: Signin, response: Response):
     password = data.password
 
     try:
-        user = await prisma.user.find_first(where={"email": email})
+        user = await prisma.user.find_unique(where={"email": email})
     except Exception:
         logger.error("Failed to get user details from db", exc_info=True)
         raise HTTPException(status_code=500, detail="fuck")
@@ -65,10 +65,10 @@ async def signin(data: Signin, response: Response):
     response.set_cookie(
         key="token",
         value=f"Bearer {token}",
-        httponly=False,
+        httponly=True,
         max_age=2 * 24 * 60 * 60,
         samesite="lax",
-        secure=True,
+        secure=False, 
     )
 
     return {"status": "success", "token": token, "message": "Login successful"}

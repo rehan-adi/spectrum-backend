@@ -72,3 +72,9 @@ async def signin(data: Signin, response: Response):
     )
 
     return {"status": "success", "token": token, "message": "Login successful"}
+
+
+@auth_router.post("/logout", status_code=status.HTTP_200_OK)
+async def logout(response: Response):
+    response.delete_cookie("token")
+    return {"status": "success", "message": "Logged out successfully"}

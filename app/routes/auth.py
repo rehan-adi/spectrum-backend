@@ -1,34 +1,38 @@
 from app.db.db import prisma
+from app.core.logger import logger
 from app.schemas.auth import Signup
-from passlib.context import CryptContext
-from fastapi import APIRouter, HTTPException
+from app.utils.password import hash_password
+from fastapi import APIRouter, HTTPException, status
 
 auth_router = APIRouter()
 
 
-@auth_router.post("/signup")
-async def signin(data: Signup):
-
+@auth_router.post("/signup", status_code=status.HTTP_201_CREATED)
+async def signup(data: Signup):
     email = data.email
     password = data.password
 
-    existing_user = await prisma.user.find_first(where={"email": email})
+    try:
+        existing_user = await prisma.user.find_first(where={"email": email})
+    except Exception:
+        logger.error("DB Error while checking existing user", exc_info=True)
+        raise HTTPException(
+            status_code=500, detail="DB Error while checking existing user"
+        )
 
     if existing_user:
         raise HTTPException(status_code=400, detail="Email is already in use")
 
-    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-    hash_password = pwd_context.hash(password)
+    password_hash = hash_password(password)
 
     try:
         await prisma.user.create(
             data={
                 "email": email,
-                "password": hash_password,
+                "password": password_hash,
             }
         )
-        raise HTTPException(status_code=201, detail="User created")
-    except Exception as e:
-        print(f"Error during signup: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        return {"status": "success", "message": "User created successfully"}
+    except Exception:
+        logger.error("DB Error while creating user", exc_info=True)
+        raise HTTPException(status_code=500, detail="DB Error while creating user")

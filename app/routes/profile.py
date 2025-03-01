@@ -68,3 +68,29 @@ async def upgrade_to_artist(user_id: str = Depends(get_user_id)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",
         )
+
+
+@profile_router.delete(
+    "/account/delete", status_code=status.HTTP_200_OK, response_model=MessageResponse
+)
+async def delete_account(user_id: str = Depends(get_user_id)):
+    try:
+        user = await prisma.user.find_unique(where={"id": user_id})
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            )
+
+        await prisma.user.delete(where={"id": user_id})
+
+        return MessageResponse(
+            status=ResponseStatus.SUCCESS, message="Account deleted successfully"
+        )
+
+    except Exception:
+        logger.error("Failed to delete account", exc_info=True)
+        return HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        )

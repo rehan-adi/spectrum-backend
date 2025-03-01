@@ -11,7 +11,7 @@ generator client {
 
 model User {
   id             String          @id @default(uuid())
-  user_id        String?         @unique
+  user_id        String?
   email          String          @unique
   name           String?
   password       String
@@ -31,9 +31,9 @@ model Wallpaper {
   id            String     @id @default(uuid())
   title         String     @db.VarChar(14)
   categoryId    String
-  artistId      String
+  artistId      String?
   category      Category   @relation(fields: [categoryId], references: [id])
-  artist        User       @relation("ArtistWallpapers", fields: [artistId], references: [id])
+  artist        User?      @relation("ArtistWallpapers", fields: [artistId], references: [id], onDelete: SetNull)
   imageUrl      String
   price         Float?
   isFree        Boolean    @default(true)
@@ -54,8 +54,8 @@ model Category {
 model Favorite {
   userId      String
   wallpaperId String
-  user        User      @relation(fields: [userId], references: [id])
-  wallpaper   Wallpaper @relation(fields: [wallpaperId], references: [id])
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wallpaper   Wallpaper @relation(fields: [wallpaperId], references: [id], onDelete: Cascade)
   createdAt   DateTime  @default(now())
 
   @@id([userId, wallpaperId])
@@ -65,15 +65,15 @@ model Purchase {
   id           String    @id @default(uuid())
   userId       String
   wallpaperId  String
-  user         User      @relation(fields: [userId], references: [id])
-  wallpaper    Wallpaper @relation(fields: [wallpaperId], references: [id])
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wallpaper    Wallpaper @relation(fields: [wallpaperId], references: [id], onDelete: Cascade)
   purchaseDate DateTime  @default(now())
   amount       Float
 }
 
 model ArtistEarnings {
   userId        String @id
-  user          User   @relation(fields: [userId], references: [id])
+  user          User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   totalEarnings Float  @default(0)
 }
 

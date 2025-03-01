@@ -64,7 +64,7 @@ async def signin(data: Signin, response: Response):
 
     response.set_cookie(
         key="token",
-        value=f"Bearer {token}",
+        value=token,
         httponly=True,
         max_age=2 * 24 * 60 * 60,
         samesite="lax",

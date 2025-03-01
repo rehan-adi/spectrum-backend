@@ -4,7 +4,7 @@ from app.core.config import settings
 from app.routes.auth import auth_router
 from contextlib import asynccontextmanager
 from app.routes.health import health_router
-from app.routes.profile import profile_roouter
+from app.routes.profile import profile_router
 from app.db.db import db_connect, db_disconnect
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -36,4 +36,4 @@ app.add_middleware(
 # Routes
 app.include_router(health_router, tags=["Health Route"], prefix="/api/v1/health")
 app.include_router(auth_router, tags=["Authentication Routes"], prefix="/api/v1/auth")
-app.include_router(profile_roouter, tags=["Profile Routes"], prefix="/api/v1/profile")
+app.include_router(profile_router, tags=["Profile Routes"], prefix="/api/v1/profile")

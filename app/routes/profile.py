@@ -2,13 +2,15 @@ from app.db.db import prisma
 from app.core.logger import logger
 from app.utils.token import get_user_id
 from app.schemas.profile import UserProfile
-from app.schemas.response import ApiResponse
+from app.schemas.response import ApiResponse, ResponseStatus
 from fastapi import APIRouter, Depends, HTTPException, status
 
 profile_router = APIRouter()
 
 
-@profile_router.get("/", response_model=ApiResponse[UserProfile])
+@profile_router.get(
+    "/", status_code=status.HTTP_200_OK, response_model=ApiResponse[UserProfile]
+)
 async def get_profile(user_id: str = Depends(get_user_id)):
     try:
         user = await prisma.user.find_unique(where={"id": user_id})
@@ -28,7 +30,9 @@ async def get_profile(user_id: str = Depends(get_user_id)):
         )
 
         return ApiResponse(
-            status="success", data=profile, message="User profile fetched successfully"
+            status=ResponseStatus.SUCCESS,
+            data=profile,
+            message="User profile fetched successfully",
         )
 
     except Exception:

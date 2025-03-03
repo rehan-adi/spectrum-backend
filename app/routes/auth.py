@@ -2,15 +2,19 @@ from app.db.db import prisma
 from app.core.logger import logger
 from app.schemas.auth import Signup, Signin
 from app.utils.token import create_access_token
+from fastapi_limiter.depends import RateLimiter
 from app.utils.password import hash_password, verify_password
-from fastapi import APIRouter, HTTPException, status, Response
+from fastapi import APIRouter, HTTPException, status, Response, Depends
 from app.schemas.response import MessageResponse, ResponseStatus, ApiResponse
 
 auth_router = APIRouter()
 
 
 @auth_router.post(
-    "/signup", status_code=status.HTTP_201_CREATED, response_model=MessageResponse
+    "/signup",
+    dependencies=[Depends(RateLimiter(times=10, seconds=60))],
+    status_code=status.HTTP_201_CREATED,
+    response_model=MessageResponse,
 )
 async def signup(data: Signup):
     email = data.email

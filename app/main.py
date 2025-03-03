@@ -7,6 +7,8 @@ from app.routes.health import health_router
 from app.routes.profile import profile_router
 from app.db.db import db_connect, db_disconnect
 from fastapi.middleware.cors import CORSMiddleware
+from app.core.limiter import init_limiter, close_limiter
+from app.core.redis import connect_redis, disconnect_redis
 
 
 @asynccontextmanager
@@ -15,11 +17,17 @@ async def lifespan(app: FastAPI):
     await db_connect()
     logger.info("✅ Database connect")
 
+    await connect_redis()
+    await init_limiter()
+
     yield
 
     # Shutdown
     await db_disconnect()
     logger.info("❌ Database disconnected!")
+
+    await disconnect_redis()
+    await close_limiter()
 
 
 app = FastAPI(lifespan=lifespan)

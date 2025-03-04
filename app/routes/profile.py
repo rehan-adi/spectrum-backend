@@ -3,6 +3,7 @@ from prisma.enums import Role
 from app.core.logger import logger
 from app.utils.token import get_user_id
 from app.schemas.profile import UserProfile
+from fastapi_limiter.depends import RateLimiter
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.schemas.response import ApiResponse, ResponseStatus, MessageResponse
 
@@ -10,7 +11,10 @@ profile_router = APIRouter()
 
 
 @profile_router.get(
-    "/me", status_code=status.HTTP_200_OK, response_model=ApiResponse[UserProfile]
+    "/me",
+    dependencies=[Depends(RateLimiter(times=60, seconds=60))],
+    status_code=status.HTTP_200_OK,
+    response_model=ApiResponse[UserProfile],
 )
 async def get_profile(user_id: str = Depends(get_user_id)):
     try:
@@ -25,8 +29,9 @@ async def get_profile(user_id: str = Depends(get_user_id)):
             name=user.name,
             email=user.email,
             profileImage=user.profileImage,
-            instagram=user.instagram,
+            role=user.role,
             twitter=user.twitter,
+            instagram=user.instagram,
             createdAt=user.createdAt,
         )
 
@@ -45,7 +50,10 @@ async def get_profile(user_id: str = Depends(get_user_id)):
 
 
 @profile_router.post(
-    "/upgrade-to-artist", status_code=status.HTTP_200_OK, response_model=MessageResponse
+    "/upgrade-to-artist",
+    dependencies=[Depends(RateLimiter(times=3, seconds=60))],
+    status_code=status.HTTP_200_OK,
+    response_model=MessageResponse,
 )
 async def upgrade_to_artist(user_id: str = Depends(get_user_id)):
     try:
@@ -55,6 +63,13 @@ async def upgrade_to_artist(user_id: str = Depends(get_user_id)):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
             )
+
+        if user.role == Role.Artist:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="You are already an artist. This action can only be performed once.",
+            )
+
         await prisma.user.update(where={"id": user_id}, data={"role": Role.Artist})
 
         return MessageResponse(
@@ -71,7 +86,10 @@ async def upgrade_to_artist(user_id: str = Depends(get_user_id)):
 
 
 @profile_router.delete(
-    "/account/delete", status_code=status.HTTP_200_OK, response_model=MessageResponse
+    "/account/delete",
+    dependencies=Depends(RateLimiter(times=3, seconds=60)),
+    status_code=status.HTTP_200_OK,
+    response_model=MessageResponse,
 )
 async def delete_account(user_id: str = Depends(get_user_id)):
     try:
@@ -90,7 +108,7 @@ async def delete_account(user_id: str = Depends(get_user_id)):
 
     except Exception:
         logger.error("Failed to delete account", exc_info=True)
-        return HTTPException(
+        raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",
         )

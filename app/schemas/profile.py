@@ -8,6 +8,7 @@ class UserProfile(BaseModel):
     email: str
     name: Optional[str]
     profileImage: Optional[str]
-    instagram: Optional[str]
+    role: str
     twitter: Optional[str]
+    instagram: Optional[str]
     createdAt: datetime

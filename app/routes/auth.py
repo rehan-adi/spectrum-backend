@@ -49,7 +49,10 @@ async def signup(data: Signup):
 
 
 @auth_router.post(
-    "/signin", status_code=status.HTTP_200_OK, response_model=MessageResponse
+    "/signin",
+    dependencies=[Depends(RateLimiter(times=10, seconds=60))],
+    status_code=status.HTTP_200_OK,
+    response_model=MessageResponse,
 )
 async def signin(data: Signin, response: Response):
     email = data.email
@@ -88,7 +91,10 @@ async def signin(data: Signin, response: Response):
 
 
 @auth_router.post(
-    "/logout", status_code=status.HTTP_200_OK, response_model=MessageResponse
+    "/logout",
+    dependencies=[Depends(RateLimiter(times=30, seconds=60))],
+    status_code=status.HTTP_200_OK,
+    response_model=MessageResponse,
 )
 async def logout(response: Response):
     response.delete_cookie("token")

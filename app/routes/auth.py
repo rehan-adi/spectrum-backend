@@ -16,7 +16,7 @@ auth_router = APIRouter()
     status_code=status.HTTP_201_CREATED,
     response_model=MessageResponse,
 )
-async def signup(data: Signup):
+async def signup(data: Signup) -> MessageResponse:
     email = data.email
     password = data.password
 
@@ -45,16 +45,16 @@ async def signup(data: Signup):
         )
     except Exception:
         logger.error("DB Error while creating user", exc_info=True)
-        raise HTTPException(status_code=500, detail="DB Error while creating user")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="DB Error while creating user")
 
 
 @auth_router.post(
     "/signin",
     dependencies=[Depends(RateLimiter(times=10, seconds=60))],
     status_code=status.HTTP_200_OK,
-    response_model=MessageResponse,
+    response_model=ApiResponse,
 )
-async def signin(data: Signin, response: Response):
+async def signin(data: Signin, response: Response) -> ApiResponse:
     email = data.email
     password = data.password
 
@@ -96,7 +96,7 @@ async def signin(data: Signin, response: Response):
     status_code=status.HTTP_200_OK,
     response_model=MessageResponse,
 )
-async def logout(response: Response):
+async def logout(response: Response) -> MessageResponse:
     response.delete_cookie("token")
     return MessageResponse(
         status=ResponseStatus.SUCCESS, message="Logged out successfully"

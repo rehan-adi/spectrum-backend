@@ -13,7 +13,7 @@ profile_router = APIRouter()
 
 @profile_router.get(
     "/me",
-    dependencies=[Depends(RateLimiter(times=60, seconds=60))],
+    dependencies=[Depends(RateLimiter(times=150, seconds=60))],
     status_code=status.HTTP_200_OK,
     response_model=ApiResponse[UserProfile],
 )
@@ -106,7 +106,7 @@ async def update_profile(
 
 @profile_router.get(
     "/get/{user_id}",
-    dependencies=[Depends(RateLimiter(times=100, seconds=60))],
+    dependencies=[Depends(RateLimiter(times=150, seconds=60))],
     status_code=status.HTTP_200_OK,
     response_model=ApiResponse[UserProfile],
 )
@@ -182,7 +182,7 @@ async def upgrade_to_artist(user_id: str = Depends(get_user_id)) -> MessageRespo
 
 @profile_router.delete(
     "/account/delete",
-    dependencies=Depends(RateLimiter(times=3, seconds=60)),
+    dependencies=[Depends(RateLimiter(times=3, seconds=60))],
     status_code=status.HTTP_200_OK,
     response_model=MessageResponse,
 )

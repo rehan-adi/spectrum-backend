@@ -1,9 +1,10 @@
 from app.db.db import prisma
+from typing import Optional
 from prisma.enums import Role
 from app.core.logger import logger
 from app.utils.token import get_user_id
-from app.schemas.profile import UserProfile
 from fastapi_limiter.depends import RateLimiter
+from app.schemas.profile import UserProfile, UpdateProfile
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.schemas.response import ApiResponse, ResponseStatus, MessageResponse
 
@@ -43,6 +44,54 @@ async def get_profile(user_id: str = Depends(get_user_id)):
 
     except Exception:
         logger.error("DB error while getting user profile", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        )
+
+
+@profile_router.put(
+    "/update",
+    dependencies=[Depends(RateLimiter(times=5, seconds=60))],
+    status_code=status.HTTP_200_OK,
+    response_model=ApiResponse,
+)
+async def update_profile(data: UpdateProfile, user_id: str = Depends(get_user_id)):
+    try:
+        user = await prisma.user.find_unique(where={"id": user_id})
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            )
+
+        update_data: dict[str, Optional[str]] = {}
+
+        if data.name is not None:
+            update_data["name"] = data.name
+
+        if data.profileImage is not None:
+            update_data["profileImage"] = str(data.profileImage)
+
+        if data.twitter is not None:
+            update_data["twitter"] = str(data.twitter)
+
+        if data.instagram is not None:
+            update_data["instagram"] = str(data.instagram)
+
+        if not update_data:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No fields provided for update",
+            )
+
+        await prisma.user.update(
+            where={"id": user_id},
+            data=update_data,  # type: ignore
+        )
+
+    except:
+        logger.error("Failed to update user profile", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",

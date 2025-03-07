@@ -17,8 +17,8 @@ async def lifespan(app: FastAPI):
     await db_connect()
     logger.info("✅ Database connect")
 
-    await connect_redis()
-    await init_limiter()
+    redis = await connect_redis()
+    await init_limiter(redis)
 
     yield
 
@@ -26,7 +26,7 @@ async def lifespan(app: FastAPI):
     await db_disconnect()
     logger.info("❌ Database disconnected!")
 
-    await disconnect_redis()
+    await disconnect_redis(redis)
     await close_limiter()
 
 

@@ -17,7 +17,7 @@ profile_router = APIRouter()
     status_code=status.HTTP_200_OK,
     response_model=ApiResponse[UserProfile],
 )
-async def get_profile(user_id: str = Depends(get_user_id)):
+async def get_profile(user_id: str = Depends(get_user_id)) -> ApiResponse[UserProfile]:
     try:
         user = await prisma.user.find_unique(where={"id": user_id})
         if not user:
@@ -52,11 +52,13 @@ async def get_profile(user_id: str = Depends(get_user_id)):
 
 @profile_router.put(
     "/update",
-    dependencies=[Depends(RateLimiter(times=5, seconds=60))],
+    dependencies=[Depends(RateLimiter(times=2, seconds=60))],
     status_code=status.HTTP_200_OK,
-    response_model=ApiResponse,
+    response_model=MessageResponse,
 )
-async def update_profile(data: UpdateProfile, user_id: str = Depends(get_user_id)):
+async def update_profile(
+    data: UpdateProfile, user_id: str = Depends(get_user_id)
+) -> MessageResponse:
     try:
         user = await prisma.user.find_unique(where={"id": user_id})
 
@@ -90,8 +92,52 @@ async def update_profile(data: UpdateProfile, user_id: str = Depends(get_user_id
             data=update_data,  # type: ignore
         )
 
-    except:
+        return MessageResponse(
+            status=ResponseStatus.SUCCESS, message="Profile successfully updated."
+        )
+
+    except Exception:
         logger.error("Failed to update user profile", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        )
+
+
+@profile_router.get(
+    "/get/{user_id}",
+    dependencies=[Depends(RateLimiter(times=100, seconds=60))],
+    status_code=status.HTTP_200_OK,
+    response_model=ApiResponse[UserProfile],
+)
+async def get_users_profile(user_id: str) -> ApiResponse[UserProfile]:
+    try:
+        user_profile = await prisma.user.find_unique(where={"id": user_id})
+
+        if not user_profile:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            )
+
+        profile_data = UserProfile(
+            id=user_profile.id,
+            name=user_profile.name,
+            email=user_profile.email,
+            role=user_profile.role,
+            profileImage=user_profile.profileImage,
+            twitter=user_profile.twitter,
+            instagram=user_profile.instagram,
+            createdAt=user_profile.createdAt,
+        )
+
+        return ApiResponse(
+            status=ResponseStatus.SUCCESS,
+            data=profile_data,
+            message="Profile details retrieved successfully.",
+        )
+
+    except Exception:
+        logger.error("Failed to get User profile", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",
@@ -104,7 +150,7 @@ async def update_profile(data: UpdateProfile, user_id: str = Depends(get_user_id
     status_code=status.HTTP_200_OK,
     response_model=MessageResponse,
 )
-async def upgrade_to_artist(user_id: str = Depends(get_user_id)):
+async def upgrade_to_artist(user_id: str = Depends(get_user_id)) -> MessageResponse:
     try:
         user = await prisma.user.find_unique(where={"id": user_id})
 
@@ -140,7 +186,7 @@ async def upgrade_to_artist(user_id: str = Depends(get_user_id)):
     status_code=status.HTTP_200_OK,
     response_model=MessageResponse,
 )
-async def delete_account(user_id: str = Depends(get_user_id)):
+async def delete_account(user_id: str = Depends(get_user_id)) -> MessageResponse:
     try:
         user = await prisma.user.find_unique(where={"id": user_id})
 
